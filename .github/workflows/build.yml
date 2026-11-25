@@ -1,0 +1,43 @@
+
+name: Check and Build
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Unzip the Flutter project
+        run: unzip -q "kogossapay-flutter-integrated (1).zip"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        working-directory: kogosso-app
+        run: flutter pub get
+
+      - name: Analyze code
+        working-directory: kogosso-app
+        continue-on-error: true
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Build test APK
+        working-directory: kogosso-app
+        run: flutter build apk --release --dart-define=API_URL=https://sandbox-api.kongossapay.com
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kongossapay-android-apk
+          path: kogosso-app/build/app/outputs/flutter-apk/app-release.apk
